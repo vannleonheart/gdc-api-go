@@ -1,0 +1,4 @@
+github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
+github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
+github.com/vannleonheart/goutil v0.0.0-20240508083838-f75d722f44fe h1:3PqFuzY82l1pdjt8PgvJJI/1lgL7iLlTPwQooJ1zLQs=
+github.com/vannleonheart/goutil v0.0.0-20240508083838-f75d722f44fe/go.mod h1:Evw6FDPdl5VpjcMuhNQlIwOGSBQnoykU6RBwKXlN9NQ=
