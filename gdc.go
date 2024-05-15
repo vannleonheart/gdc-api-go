@@ -51,24 +51,26 @@ func (c *Client) GetAccessToken() (*GetAccessTokenResponseBody, error) {
 	return &result, nil
 }
 
-func (c *Client) SetAccessToken(accessToken string) {
-	c.accessToken = &accessToken
+func (c *Client) SetAccessToken(accessToken *string) {
+	c.accessToken = accessToken
 }
 
-func (c *Client) WithAccessToken(accessToken string) *Client {
+func (c *Client) WithAccessToken(accessToken *string) *Client {
 	c.SetAccessToken(accessToken)
 
 	return c
 }
 
 func (c *Client) post(uri string, data map[string]interface{}, result interface{}) error {
+	defer c.SetAccessToken(nil)
+
 	if c.accessToken == nil {
 		accessToken, err := c.GetAccessToken()
 		if err != nil {
 			return err
 		}
 
-		c.SetAccessToken(accessToken.AccessToken)
+		c.SetAccessToken(&accessToken.AccessToken)
 	}
 
 	timestamp := time.Now().Format(TimestampFormat)
@@ -102,13 +104,15 @@ func (c *Client) post(uri string, data map[string]interface{}, result interface{
 }
 
 func (c *Client) get(uri string, result interface{}) error {
+	defer c.SetAccessToken(nil)
+
 	if c.accessToken == nil {
 		accessToken, err := c.GetAccessToken()
 		if err != nil {
 			return err
 		}
 
-		c.SetAccessToken(accessToken.AccessToken)
+		c.SetAccessToken(&accessToken.AccessToken)
 	}
 
 	timestamp := time.Now().Format(TimestampFormat)
