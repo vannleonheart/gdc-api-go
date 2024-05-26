@@ -121,7 +121,7 @@ func (c *Client) post(uri string, data map[string]interface{}, result interface{
 			"url":   requestUrl,
 			"detail": map[string]interface{}{
 				"activity": "json marshal",
-				"data":     string(byData),
+				"data":     data,
 			},
 		})
 
@@ -137,6 +137,7 @@ func (c *Client) post(uri string, data map[string]interface{}, result interface{
 			"url":   requestUrl,
 			"detail": map[string]interface{}{
 				"activity": "sign",
+				"data":     data,
 				"to_sign":  strToSign,
 			},
 		})
@@ -156,6 +157,7 @@ func (c *Client) post(uri string, data map[string]interface{}, result interface{
 			"error":   err.Error(),
 			"url":     requestUrl,
 			"headers": requestHeaders,
+			"data":    data,
 			"result":  result,
 		})
 
@@ -165,6 +167,7 @@ func (c *Client) post(uri string, data map[string]interface{}, result interface{
 	c.debug("debug", map[string]interface{}{
 		"url":     requestUrl,
 		"headers": requestHeaders,
+		"data":    data,
 		"result":  result,
 	})
 
