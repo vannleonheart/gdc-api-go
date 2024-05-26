@@ -1,14 +1,25 @@
 package gdc
 
 type Client struct {
-	Config      Config
-	accessToken *string
+	Config       Config
+	accessToken  *string
+	debugChannel *chan interface{}
 }
 
 type Config struct {
-	BaseUrl            string `json:"base_url"`
-	ClientKey          string `json:"client_key"`
-	PrivateKeyFilePath string `json:"private_key_file_path"`
+	BaseUrl            string       `json:"base_url"`
+	ClientKey          string       `json:"client_key"`
+	PrivateKeyFilePath string       `json:"private_key_file_path"`
+	Debug              *DebugConfig `json:"debug"`
+}
+
+type DebugConfig struct {
+	Enable    bool   `json:"enable"`
+	Level     string `json:"level"`
+	Path      string `json:"path"`
+	Filename  string `json:"filename"`
+	Extension string `json:"extension"`
+	Rotation  string `json:"rotation"`
 }
 
 type ErrorResponse struct {

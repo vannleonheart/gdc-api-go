@@ -19,8 +19,33 @@ import (
 	"time"
 )
 
-func New(config Config) *Client {
-	return &Client{Config: config}
+func New(config Config, debugChannel *chan interface{}) *Client {
+	cl := &Client{Config: config, debugChannel: debugChannel}
+
+	return cl
+}
+
+func (c *Client) debug(level string, data interface{}) {
+	msg := map[string]interface{}{
+		"level": level,
+		"data":  data,
+	}
+
+	if c.debugChannel != nil {
+		go func(m interface{}) {
+			*c.debugChannel <- m
+		}(msg)
+	}
+
+	if c.Config.Debug != nil && c.Config.Debug.Enable {
+		if c.Config.Debug.Level == "error" && level != "error" {
+			return
+		}
+
+		go func() {
+			_ = goutil.WriteJsonToFile(msg, c.Config.Debug.Path, c.Config.Debug.Filename, c.Config.Debug.Extension, c.Config.Debug.Rotation)
+		}()
+	}
 }
 
 func (c *Client) GetAccessToken() (*GetAccessTokenResponseBody, error) {
@@ -28,9 +53,18 @@ func (c *Client) GetAccessToken() (*GetAccessTokenResponseBody, error) {
 
 	timestamp := time.Now().Format(TimestampFormat)
 	requestUrl := fmt.Sprintf("%s/%s/auth/access-token", c.Config.BaseUrl, "v1.0")
-
-	signature, err := c.sign(fmt.Sprintf("%s|%s", c.Config.ClientKey, timestamp))
+	strToSign := fmt.Sprintf("%s|%s", c.Config.ClientKey, timestamp)
+	signature, err := c.sign(strToSign)
 	if err != nil {
+		c.debug("error", map[string]interface{}{
+			"error": err.Error(),
+			"url":   requestUrl,
+			"detail": map[string]interface{}{
+				"activity": "sign",
+				"to_sign":  strToSign,
+			},
+		})
+
 		return nil, err
 	}
 
@@ -45,8 +79,21 @@ func (c *Client) GetAccessToken() (*GetAccessTokenResponseBody, error) {
 	}
 
 	if _, err := goutil.SendHttpPost(requestUrl, requestBody, &requestHeaders, &result); err != nil {
+		c.debug("error", map[string]interface{}{
+			"error":   err.Error(),
+			"url":     requestUrl,
+			"headers": requestHeaders,
+			"result":  result,
+		})
+
 		return nil, err
 	}
+
+	c.debug("debug", map[string]interface{}{
+		"url":     requestUrl,
+		"headers": requestHeaders,
+		"result":  result,
+	})
 
 	return &result, nil
 }
@@ -75,17 +122,33 @@ func (c *Client) post(uri string, data map[string]interface{}, result interface{
 
 	timestamp := time.Now().Format(TimestampFormat)
 	requestUrl := fmt.Sprintf("%s%s", c.Config.BaseUrl, uri)
-
 	byData, err := json.Marshal(data)
 	if err != nil {
+		c.debug("error", map[string]interface{}{
+			"error": err.Error(),
+			"url":   requestUrl,
+			"detail": map[string]interface{}{
+				"activity": "json marshal",
+				"data":     string(byData),
+			},
+		})
+
 		return err
 	}
 
 	strData := strings.ToLower(hex.EncodeToString(byData))
 	strToSign := fmt.Sprintf("%s|%s|%s|%s", timestamp, *c.accessToken, uri, strData)
-
 	signature, err := c.sign(strToSign)
 	if err != nil {
+		c.debug("error", map[string]interface{}{
+			"error": err.Error(),
+			"url":   requestUrl,
+			"detail": map[string]interface{}{
+				"activity": "sign",
+				"to_sign":  strToSign,
+			},
+		})
+
 		return err
 	}
 
@@ -97,8 +160,21 @@ func (c *Client) post(uri string, data map[string]interface{}, result interface{
 	}
 
 	if _, err := goutil.SendHttpPost(requestUrl, data, &requestHeaders, result); err != nil {
+		c.debug("error", map[string]interface{}{
+			"error":   err.Error(),
+			"url":     requestUrl,
+			"headers": requestHeaders,
+			"result":  result,
+		})
+
 		return err
 	}
+
+	c.debug("debug", map[string]interface{}{
+		"url":     requestUrl,
+		"headers": requestHeaders,
+		"result":  result,
+	})
 
 	return nil
 }
@@ -118,9 +194,17 @@ func (c *Client) get(uri string, result interface{}) error {
 	timestamp := time.Now().Format(TimestampFormat)
 	requestUrl := fmt.Sprintf("%s%s", c.Config.BaseUrl, uri)
 	strToSign := fmt.Sprintf("%s|%s|%s|", timestamp, *c.accessToken, uri)
-
 	signature, err := c.sign(strToSign)
 	if err != nil {
+		c.debug("error", map[string]interface{}{
+			"error": err.Error(),
+			"url":   requestUrl,
+			"detail": map[string]interface{}{
+				"activity": "sign",
+				"to_sign":  strToSign,
+			},
+		})
+
 		return err
 	}
 
@@ -132,8 +216,21 @@ func (c *Client) get(uri string, result interface{}) error {
 	}
 
 	if _, err := goutil.SendHttpGet(requestUrl, nil, &requestHeaders, result); err != nil {
+		c.debug("error", map[string]interface{}{
+			"error":   err.Error(),
+			"url":     requestUrl,
+			"headers": requestHeaders,
+			"result":  result,
+		})
+
 		return err
 	}
+
+	c.debug("debug", map[string]interface{}{
+		"url":     requestUrl,
+		"headers": requestHeaders,
+		"result":  result,
+	})
 
 	return nil
 }

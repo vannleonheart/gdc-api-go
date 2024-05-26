@@ -10,12 +10,37 @@ gdcConfig := gdc.Config{
     BaseUrl:            "{gdc_api_base_url}",
     ClientKey:          "{your_client_key}",
     PrivateKeyFilePath: "{path_to_your_private_key_file}",
+    // enable debug or set to nil to disable
+    Debug:              &gdc.DebugConfig{
+        Enable:    true,
+        Level:     "debug",
+        Path:      "D:\\Project\\gdc-api-go\\test",
+        Filename:  "gdc",
+        Extension: "log",
+        Rotation:  "daily",
+    },
 }
 ```
 #### Client
 ```go
-gdcClient := gdc.NewClient(gdcConfig)
+gdcClient := gdc.NewClient(gdcConfig, nil)
 ```
+You can pass an interface channel to second parameter to receive debug message
+```go
+ch := make(chan interface{})
+
+gdcClient := gdc.NewClient(gdcConfig, &ch)
+
+go func() {
+    for {
+        select {
+        case msg := <-ch:
+            fmt.Println(msg)
+        }
+    }
+}()
+```
+
 #### Access Token
 ```go       
 accessToken, err := gdcClient.GetAccessToken()
