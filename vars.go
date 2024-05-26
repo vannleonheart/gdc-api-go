@@ -1,9 +1,8 @@
 package gdc
 
 type Client struct {
-	Config       Config
-	accessToken  *string
-	debugChannel *chan interface{}
+	Config      Config
+	accessToken *string
 }
 
 type Config struct {

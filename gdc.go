@@ -19,8 +19,8 @@ import (
 	"time"
 )
 
-func New(config Config, debugChannel *chan interface{}) *Client {
-	cl := &Client{Config: config, debugChannel: debugChannel}
+func New(config Config) *Client {
+	cl := &Client{Config: config}
 
 	return cl
 }
@@ -31,20 +31,12 @@ func (c *Client) debug(level string, data interface{}) {
 		"data":  data,
 	}
 
-	if c.debugChannel != nil {
-		go func(m interface{}) {
-			*c.debugChannel <- m
-		}(msg)
-	}
-
 	if c.Config.Debug != nil && c.Config.Debug.Enable {
 		if c.Config.Debug.Level == "error" && level != "error" {
 			return
 		}
 
-		go func() {
-			_ = goutil.WriteJsonToFile(msg, c.Config.Debug.Path, c.Config.Debug.Filename, c.Config.Debug.Extension, c.Config.Debug.Rotation)
-		}()
+		_ = goutil.WriteJsonToFile(msg, c.Config.Debug.Path, c.Config.Debug.Filename, c.Config.Debug.Extension, c.Config.Debug.Rotation)
 	}
 }
 
