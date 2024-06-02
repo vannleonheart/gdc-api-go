@@ -6,13 +6,13 @@ type Client struct {
 }
 
 type Config struct {
-	BaseUrl            string       `json:"base_url"`
-	ClientKey          string       `json:"client_key"`
-	PrivateKeyFilePath string       `json:"private_key_file_path"`
-	Debug              *DebugConfig `json:"debug"`
+	BaseUrl            string     `json:"base_url"`
+	ClientKey          string     `json:"client_key"`
+	PrivateKeyFilePath string     `json:"private_key_file_path"`
+	Log                *LogConfig `json:"log"`
 }
 
-type DebugConfig struct {
+type LogConfig struct {
 	Enable    bool   `json:"enable"`
 	Level     string `json:"level"`
 	Path      string `json:"path"`

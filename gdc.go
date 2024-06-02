@@ -25,21 +25,6 @@ func New(config Config) *Client {
 	return cl
 }
 
-func (c *Client) debug(level string, data interface{}) {
-	msg := map[string]interface{}{
-		"level": level,
-		"data":  data,
-	}
-
-	if c.Config.Debug != nil && c.Config.Debug.Enable {
-		if c.Config.Debug.Level == "error" && level != "error" {
-			return
-		}
-
-		_ = goutil.WriteJsonToFile(msg, c.Config.Debug.Path, c.Config.Debug.Filename, c.Config.Debug.Extension, c.Config.Debug.Rotation)
-	}
-}
-
 func (c *Client) GetAccessToken() (*GetAccessTokenResponseBody, error) {
 	var result GetAccessTokenResponseBody
 
@@ -48,11 +33,11 @@ func (c *Client) GetAccessToken() (*GetAccessTokenResponseBody, error) {
 	strToSign := fmt.Sprintf("%s|%s", c.Config.ClientKey, timestamp)
 	signature, err := c.sign(strToSign)
 	if err != nil {
-		c.debug("error", map[string]interface{}{
+		c.log("error", map[string]interface{}{
 			"error": err.Error(),
 			"url":   requestUrl,
 			"detail": map[string]interface{}{
-				"activity": "sign",
+				"activity": "sign request",
 				"to_sign":  strToSign,
 			},
 		})
@@ -70,21 +55,29 @@ func (c *Client) GetAccessToken() (*GetAccessTokenResponseBody, error) {
 		"grantType": "client_credentials",
 	}
 
-	if _, err := goutil.SendHttpPost(requestUrl, requestBody, &requestHeaders, &result); err != nil {
-		c.debug("error", map[string]interface{}{
-			"error":   err.Error(),
-			"url":     requestUrl,
-			"headers": requestHeaders,
-			"result":  result,
+	raw, err := goutil.SendHttpPost(requestUrl, requestBody, &requestHeaders, &result)
+
+	var responseBodyRaw string
+
+	if raw != nil {
+		responseBodyRaw = string(*raw)
+	}
+
+	if err != nil {
+		c.log("error", map[string]interface{}{
+			"error":    err.Error(),
+			"url":      requestUrl,
+			"header":   requestHeaders,
+			"response": responseBodyRaw,
 		})
 
 		return nil, err
 	}
 
-	c.debug("debug", map[string]interface{}{
-		"url":     requestUrl,
-		"headers": requestHeaders,
-		"result":  result,
+	c.log("debug", map[string]interface{}{
+		"url":      requestUrl,
+		"header":   requestHeaders,
+		"response": responseBodyRaw,
 	})
 
 	return &result, nil
@@ -98,6 +91,29 @@ func (c *Client) WithAccessToken(accessToken *string) *Client {
 	c.SetAccessToken(accessToken)
 
 	return c
+}
+
+/*
+ * Logging
+ *
+ * @param string level
+ * @param interface{} data
+ *
+ * @return void
+ */
+func (c *Client) log(level string, data interface{}) {
+	if c.Config.Log != nil && c.Config.Log.Enable {
+		if c.Config.Log.Level == "error" && level != "error" {
+			return
+		}
+
+		msg := map[string]interface{}{
+			"level": level,
+			"data":  data,
+		}
+
+		_ = goutil.WriteJsonToFile(msg, c.Config.Log.Path, c.Config.Log.Filename, c.Config.Log.Extension, c.Config.Log.Rotation)
+	}
 }
 
 func (c *Client) post(uri string, data map[string]interface{}, result interface{}) error {
@@ -116,11 +132,11 @@ func (c *Client) post(uri string, data map[string]interface{}, result interface{
 	requestUrl := fmt.Sprintf("%s%s", c.Config.BaseUrl, uri)
 	byData, err := json.Marshal(data)
 	if err != nil {
-		c.debug("error", map[string]interface{}{
+		c.log("error", map[string]interface{}{
 			"error": err.Error(),
 			"url":   requestUrl,
 			"detail": map[string]interface{}{
-				"activity": "json marshal",
+				"activity": "json marshal post data",
 				"data":     data,
 			},
 		})
@@ -132,11 +148,11 @@ func (c *Client) post(uri string, data map[string]interface{}, result interface{
 	strToSign := fmt.Sprintf("%s|%s|%s|%s", timestamp, *c.accessToken, uri, strData)
 	signature, err := c.sign(strToSign)
 	if err != nil {
-		c.debug("error", map[string]interface{}{
+		c.log("error", map[string]interface{}{
 			"error": err.Error(),
 			"url":   requestUrl,
 			"detail": map[string]interface{}{
-				"activity": "sign",
+				"activity": "sign request",
 				"data":     data,
 				"to_sign":  strToSign,
 			},
@@ -152,23 +168,31 @@ func (c *Client) post(uri string, data map[string]interface{}, result interface{
 		"X-Signature":   *signature,
 	}
 
-	if _, err := goutil.SendHttpPost(requestUrl, data, &requestHeaders, result); err != nil {
-		c.debug("error", map[string]interface{}{
-			"error":   err.Error(),
-			"url":     requestUrl,
-			"headers": requestHeaders,
-			"data":    data,
-			"result":  result,
+	raw, err := goutil.SendHttpPost(requestUrl, data, &requestHeaders, result)
+
+	var responseBodyRaw string
+
+	if raw != nil {
+		responseBodyRaw = string(*raw)
+	}
+
+	if err != nil {
+		c.log("error", map[string]interface{}{
+			"error":    err.Error(),
+			"url":      requestUrl,
+			"header":   requestHeaders,
+			"request":  data,
+			"response": responseBodyRaw,
 		})
 
 		return err
 	}
 
-	c.debug("debug", map[string]interface{}{
-		"url":     requestUrl,
-		"headers": requestHeaders,
-		"data":    data,
-		"result":  result,
+	c.log("debug", map[string]interface{}{
+		"url":      requestUrl,
+		"header":   requestHeaders,
+		"request":  data,
+		"response": responseBodyRaw,
 	})
 
 	return nil
@@ -191,11 +215,11 @@ func (c *Client) get(uri string, result interface{}) error {
 	strToSign := fmt.Sprintf("%s|%s|%s|", timestamp, *c.accessToken, uri)
 	signature, err := c.sign(strToSign)
 	if err != nil {
-		c.debug("error", map[string]interface{}{
+		c.log("error", map[string]interface{}{
 			"error": err.Error(),
 			"url":   requestUrl,
 			"detail": map[string]interface{}{
-				"activity": "sign",
+				"activity": "sign request",
 				"to_sign":  strToSign,
 			},
 		})
@@ -210,21 +234,29 @@ func (c *Client) get(uri string, result interface{}) error {
 		"X-Signature":   *signature,
 	}
 
-	if _, err := goutil.SendHttpGet(requestUrl, nil, &requestHeaders, result); err != nil {
-		c.debug("error", map[string]interface{}{
-			"error":   err.Error(),
-			"url":     requestUrl,
-			"headers": requestHeaders,
-			"result":  result,
+	raw, err := goutil.SendHttpGet(requestUrl, nil, &requestHeaders, result)
+
+	var responseBodyRaw string
+
+	if raw != nil {
+		responseBodyRaw = string(*raw)
+	}
+
+	if err != nil {
+		c.log("error", map[string]interface{}{
+			"error":    err.Error(),
+			"url":      requestUrl,
+			"header":   requestHeaders,
+			"response": responseBodyRaw,
 		})
 
 		return err
 	}
 
-	c.debug("debug", map[string]interface{}{
-		"url":     requestUrl,
-		"headers": requestHeaders,
-		"result":  result,
+	c.log("debug", map[string]interface{}{
+		"url":      requestUrl,
+		"header":   requestHeaders,
+		"response": responseBodyRaw,
 	})
 
 	return nil
