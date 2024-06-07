@@ -9,6 +9,7 @@ type Config struct {
 	BaseUrl            string     `json:"base_url"`
 	ClientKey          string     `json:"client_key"`
 	PrivateKeyFilePath string     `json:"private_key_file_path"`
+	Timezone           string     `json:"timezone"`
 	Log                *LogConfig `json:"log"`
 }
 

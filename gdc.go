@@ -28,7 +28,7 @@ func New(config Config) *Client {
 func (c *Client) GetAccessToken() (*GetAccessTokenResponseBody, error) {
 	var result GetAccessTokenResponseBody
 
-	timestamp := time.Now().Format(TimestampFormat)
+	timestamp := c.getTimestamp()
 	requestUrl := fmt.Sprintf("%s/%s/auth/access-token", c.Config.BaseUrl, "v1.0")
 	strToSign := fmt.Sprintf("%s|%s", c.Config.ClientKey, timestamp)
 	signature, err := c.sign(strToSign)
@@ -128,7 +128,7 @@ func (c *Client) post(uri string, data map[string]interface{}, result interface{
 		c.SetAccessToken(&accessToken.AccessToken)
 	}
 
-	timestamp := time.Now().Format(TimestampFormat)
+	timestamp := c.getTimestamp()
 	requestUrl := fmt.Sprintf("%s%s", c.Config.BaseUrl, uri)
 	byData, err := json.Marshal(data)
 	if err != nil {
@@ -210,7 +210,7 @@ func (c *Client) get(uri string, result interface{}) error {
 		c.SetAccessToken(&accessToken.AccessToken)
 	}
 
-	timestamp := time.Now().Format(TimestampFormat)
+	timestamp := c.getTimestamp()
 	requestUrl := fmt.Sprintf("%s%s", c.Config.BaseUrl, uri)
 	strToSign := fmt.Sprintf("%s|%s|%s|", timestamp, *c.accessToken, uri)
 	signature, err := c.sign(strToSign)
@@ -281,6 +281,22 @@ func (c *Client) sign(strToSign string) (*string, error) {
 	signature := base64.StdEncoding.EncodeToString(signed)
 
 	return &signature, nil
+}
+
+func (c *Client) getTimestamp() string {
+	now := time.Now()
+	timezone := c.Config.Timezone
+
+	if timezone == "" {
+		timezone = DefaultTimezone
+	}
+
+	loc, err := time.LoadLocation(timezone)
+	if err == nil {
+		now = now.In(loc)
+	}
+
+	return now.Format(TimestampFormat)
 }
 
 func parsePrivateKey(pvKeyFilePath string) (*rsa.PrivateKey, error) {
