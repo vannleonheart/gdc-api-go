@@ -4,5 +4,5 @@ go 1.21
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/vannleonheart/goutil v0.0.0-20240526112711-1f7746252ffc
+	github.com/vannleonheart/goutil v0.0.0-20240727234225-5b50bf3dbf9a
 )

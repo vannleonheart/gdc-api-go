@@ -55,7 +55,7 @@ func (c *Client) GetAccessToken() (*GetAccessTokenResponseBody, error) {
 		"grantType": "client_credentials",
 	}
 
-	raw, err := goutil.SendHttpPost(requestUrl, requestBody, &requestHeaders, &result)
+	raw, err := goutil.SendHttpPost(requestUrl, requestBody, &requestHeaders, &result, nil)
 
 	var responseBodyRaw string
 
@@ -168,7 +168,7 @@ func (c *Client) post(uri string, data map[string]interface{}, result interface{
 		"X-Signature":   *signature,
 	}
 
-	raw, err := goutil.SendHttpPost(requestUrl, data, &requestHeaders, result)
+	raw, err := goutil.SendHttpPost(requestUrl, data, &requestHeaders, result, nil)
 
 	var responseBodyRaw string
 
@@ -234,7 +234,7 @@ func (c *Client) get(uri string, result interface{}) error {
 		"X-Signature":   *signature,
 	}
 
-	raw, err := goutil.SendHttpGet(requestUrl, nil, &requestHeaders, result)
+	raw, err := goutil.SendHttpGet(requestUrl, nil, &requestHeaders, result, nil)
 
 	var responseBodyRaw string
 
